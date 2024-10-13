@@ -1,4 +1,4 @@
-package sptech.school.bucket;
+package br.com.technology.tree.bucket;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static br.com.technology.tree.Log.registrarErro;
+import static br.com.technology.tree.Log.registrarLog;
+
 public class S3Bucket {
 
     public static void createNewBucket(S3Client s3Client, String bucketName) {
@@ -22,8 +25,10 @@ public class S3Bucket {
                     .build();
             s3Client.createBucket(createBucketRequest);
             System.out.println("Bucket criado com sucesso: " + bucketName);
+            registrarLog("Bucket criado com sucesso: " + bucketName);
         } catch (S3Exception e) {
             System.err.println("Erro ao criar o bucket: " + e.getMessage());
+            registrarErro("Erro ao criar o bucket: " + e.getMessage());
         }
     }
 
@@ -34,8 +39,11 @@ public class S3Bucket {
             for (Bucket bucket : buckets) {
                 System.out.println("- " + bucket.name());
             }
+            registrarLog("Listagem de todos os buckets com sucesso.");
         } catch (S3Exception e) {
+
             System.err.println("Erro ao listar buckets: " + e.getMessage());
+            registrarErro("Erro ao listar todos os buckets: " + e.getMessage());
         }
     }
 
@@ -50,8 +58,10 @@ public class S3Bucket {
             for (S3Object object : objects) {
                 System.out.println("- " + object.key());
             }
+            registrarLog("Listagem de todos os objetos do bucket " + bucketName + " com sucesso.");
         } catch (S3Exception e) {
-            System.err.println("Erro ao listar objetos no bucket: " + e.getMessage());
+            System.err.println("Erro ao listar objetos no bucket " + bucketName + ": " + e.getMessage());
+            registrarErro("Erro ao listar objetos no bucket " + bucketName + ": " + e.getMessage());
         }
     }
 
@@ -67,8 +77,10 @@ public class S3Bucket {
             s3Client.putObject(putObjectRequest, RequestBody.fromFile(file));
 
             System.out.println("Arquivo '" + file.getName() + "' enviado com sucesso com o nome: " + uniqueFileName);
+            registrarLog("Arquivo '" + file.getName() + "' enviado com sucesso com o nome: " + uniqueFileName);
         } catch (S3Exception e) {
             System.err.println("Erro ao fazer upload do arquivo: " + e.getMessage());
+            registrarErro("Erro ao fazer upload do arquivo: " + e.getMessage());
         }
     }
 
@@ -89,10 +101,12 @@ public class S3Bucket {
                 InputStream inputStream = s3Client.getObject(getObjectRequest, ResponseTransformer.toInputStream());
                 Files.copy(inputStream, downloadFile.toPath());
                 System.out.println("Arquivo baixado: " + object.key());
+                registrarLog("Arquivo baixado com sucesso: " + object.key());
             }
         } catch (IOException | S3Exception e) {
             String mensagem = "Erro ao fazer download do(s) arquivo(s): " + e.getMessage();
             System.err.println(mensagem);
+            registrarErro(mensagem);
         }
     }
 
@@ -106,8 +120,10 @@ public class S3Bucket {
             s3Client.deleteObject(deleteObjectRequest);
 
             System.out.println("Objeto deletado com sucesso: " + objectKeyToDelete);
+            registrarLog("Objeto deletado com sucesso: " + objectKeyToDelete);
         } catch (S3Exception e) {
             System.err.println("Erro ao deletar objeto: " + e.getMessage());
+            registrarErro("Erro ao deletar objeto: " + e.getMessage());
         }
     }
 }

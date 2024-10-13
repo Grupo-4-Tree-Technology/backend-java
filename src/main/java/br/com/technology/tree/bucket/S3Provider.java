@@ -1,4 +1,4 @@
-package sptech.school.bucket;
+package br.com.technology.tree.bucket;
 
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.regions.Region;
