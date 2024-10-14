@@ -6,12 +6,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 
 public class Log {
 
     private static final String LOG_DIRECTORY = "logs/";
-    private static final String LOG_FILE_PATH = "historico.log";
 
     private static void createLogDirectory() {
         File directory = new File(LOG_DIRECTORY);
@@ -20,12 +20,23 @@ public class Log {
         }
     }
 
+    private static String obterCaminhoDoArquivoDiario() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        Calendar cal = Calendar.getInstance();
+
+        cal.add(Calendar.DAY_OF_MONTH, 0);
+
+        String simulatedDate = sdf.format(cal.getTime());
+        return LOG_DIRECTORY + "logs_" + simulatedDate + ".log";
+    }
+
     public static void registrarLog(String mensagem) {
         createLogDirectory();
         String dataHoraAtual = coletarDataHoraAtual();
         String logMessage = dataHoraAtual + " [SUCESSO] " + mensagem;
+        String logFilePath = obterCaminhoDoArquivoDiario();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_DIRECTORY + LOG_FILE_PATH, true))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFilePath, true))) {
             writer.write(logMessage);
             writer.newLine();
         } catch (IOException e) {
@@ -37,8 +48,9 @@ public class Log {
         createLogDirectory();
         String dataHora = coletarDataHoraAtual();
         String logMessage = dataHora + " [ERRO] " + mensagem;
+        String logFilePath = obterCaminhoDoArquivoDiario();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(LOG_FILE_PATH, true))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFilePath, true))) {
             writer.write(logMessage);
             writer.newLine();
         } catch (IOException e) {
