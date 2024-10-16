@@ -46,10 +46,8 @@ public class Main {
         DBConnectionProvider dbConnectionProvider = new DBConnectionProvider();
         JdbcTemplate connection = dbConnectionProvider.getConnection();
 
-        // BancoDeDados.createTables(connection);
+        BancoDeDados.createTables(connection);
 
         processarAcidentes(connection);
-        System.out.println(connection.query("SELECT * FROM acidente_transito WHERE causa_acidente = 'Demais falhas mecânicas ou elétricas';", new BeanPropertyRowMapper<>(Acidente.class)));
-
     }
 }
