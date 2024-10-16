@@ -100,7 +100,7 @@ public class BancoDeDados {
                                 
                 PRIMARY KEY pk_evento_transito (id),
                 CONSTRAINT CHECK (fase_dia IN ('Plena Noite', 'Amanhecer', 'Pleno dia', 'Anoitecer')),
-                CONSTRAINT CHECK (condicao_metereologica IN ('Céu Claro', 'Chuva', 'Sol', 'Nublado', 'Garoa/Chuvisco'))
+                CONSTRAINT CHECK (condicao_metereologica IN ('Ceu Claro', 'Chuva', 'Sol', 'Nublado', 'Garoa/Chuvisco'))
                 );
                 """);
             System.out.println("\u001B[32mCriação da tabela acidente_transito feita com sucesso!" + "\u001B[0m");

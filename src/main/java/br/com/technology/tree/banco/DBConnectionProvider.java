@@ -11,9 +11,9 @@ public class DBConnectionProvider {
 
     public DBConnectionProvider() {
         BasicDataSource basicDataSource = new BasicDataSource();
-        basicDataSource.setUrl("jdbc:mysql://localhost:3306/TreeTechnology");
+        basicDataSource.setUrl("jdbc:mysql://18.212.68.186:3306/TreeTechnology");
         basicDataSource.setUsername("root"); // Deve alterar pro que deseja (provavelmente vai ser root).
-        basicDataSource.setPassword("123"); // Deve alterar pro que deseja...
+        basicDataSource.setPassword("urubu100"); // Deve alterar pro que deseja...
 
         this.dataSource = basicDataSource;
     }

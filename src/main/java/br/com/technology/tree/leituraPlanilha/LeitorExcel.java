@@ -45,9 +45,13 @@ public class LeitorExcel {
             // Iterando sobre as linhas da planilha
 
             Integer contadorLinhas = 0;
+            Integer linhaInicial = 0;
 
             List<Acidente> acidentesDoBanco = connection.query("SELECT id FROM acidente_transito", new BeanPropertyRowMapper<>(Acidente.class));
-            Integer linhaInicial = acidentesDoBanco.getLast().getId();
+
+            if (!acidentesDoBanco.isEmpty()) {
+                linhaInicial = acidentesDoBanco.getLast().getId();
+            }
 
             int[] indicesColuna = new int[]{0, 1, 3, 4, 7, 8, 11, 13, 24};
 
@@ -78,13 +82,17 @@ public class LeitorExcel {
                     if (row.getCell(4).getStringCellValue().equals("SP")) {
 
                         String faseDia = row.getCell(11).getStringCellValue();
+                        System.out.println("Fase do dia: " + faseDia);
                         if (faseDia.equals("Plena Noite") || faseDia.equals("Amanhecer") ||
                             faseDia.equals("Pleno dia") || faseDia.equals("Anoitecer")) {
 
                             String condicaoMetereologica = row.getCell(13).getStringCellValue();
+                            System.out.println("Condicao Metereológica: " + condicaoMetereologica);
                             if (condicaoMetereologica.equals("Céu Claro") || condicaoMetereologica.equals("Chuva") ||
                                 condicaoMetereologica.equals("Sol") || condicaoMetereologica.equals("Nublado") ||
                                 condicaoMetereologica.equals("Garoa/Chuvisco")) {
+
+                                String condicaoFormatada = condicaoMetereologica.equals("Céu Claro") ? condicaoMetereologica.replace('é', 'e') : condicaoMetereologica;
 
                                 acidente.setId((int) row.getCell(0).getNumericCellValue());
                                 acidente.setData(row.getCell(1).getLocalDateTimeCellValue().toString().substring(0, 10));
@@ -93,7 +101,7 @@ public class LeitorExcel {
                                 acidente.setMunicipio(row.getCell(7).getStringCellValue());
                                 acidente.setCausa(row.getCell(8).getStringCellValue());
                                 acidente.setFase_dia(row.getCell(11).getStringCellValue());
-                                acidente.setCondicao_metereologica(row.getCell(13).getStringCellValue());
+                                acidente.setCondicao_metereologica(condicaoFormatada);
                                 acidente.setQuantidade_veiculos((int) row.getCell(24).getNumericCellValue());
 
                                 acidentesExtraidos.add(acidente);
