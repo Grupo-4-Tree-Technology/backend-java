@@ -53,7 +53,7 @@ public class LeitorExcel {
                 linhaInicial = acidentesDoBanco.getLast().getId();
             }
 
-            int[] indicesColuna = new int[]{0, 1, 3, 4, 7, 8, 11, 13, 24};
+            int[] indicesColuna = new int[]{0, 1, 2, 3, 4, 7, 8, 11, 13, 24};
 
             for (Row row : sheet) {
 
@@ -82,12 +82,10 @@ public class LeitorExcel {
                     if (row.getCell(4).getStringCellValue().equals("SP")) {
 
                         String faseDia = row.getCell(11).getStringCellValue();
-                        System.out.println("Fase do dia: " + faseDia);
                         if (faseDia.equals("Plena Noite") || faseDia.equals("Amanhecer") ||
                             faseDia.equals("Pleno dia") || faseDia.equals("Anoitecer")) {
 
                             String condicaoMetereologica = row.getCell(13).getStringCellValue();
-                            System.out.println("Condicao Metereológica: " + condicaoMetereologica);
                             if (condicaoMetereologica.equals("Céu Claro") || condicaoMetereologica.equals("Chuva") ||
                                 condicaoMetereologica.equals("Sol") || condicaoMetereologica.equals("Nublado") ||
                                 condicaoMetereologica.equals("Garoa/Chuvisco")) {
@@ -96,6 +94,7 @@ public class LeitorExcel {
 
                                 acidente.setId((int) row.getCell(0).getNumericCellValue());
                                 acidente.setData(row.getCell(1).getLocalDateTimeCellValue().toString().substring(0, 10));
+                                acidente.setDia_semana(row.getCell(2).getStringCellValue());
                                 acidente.setHorario(row.getCell(3).getLocalDateTimeCellValue().toString().substring(11, 16));
                                 acidente.setUf(row.getCell(4).getStringCellValue());
                                 acidente.setMunicipio(row.getCell(7).getStringCellValue());
@@ -109,16 +108,23 @@ public class LeitorExcel {
                                 try {
                                     connection.update("""
                                         INSERT INTO acidente_transito\s
-                                        (id, data, horario, uf, municipio, causa_acidente, fase_dia, condicao_metereologica, qtd_veiculos_envolvidos)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                                        acidente.getId(), acidente.getData(), acidente.getHorario(), acidente.getUf(), acidente.getMunicipio(),
+                                        (id, data, dia_semana, horario, uf, municipio, causa_acidente, fase_dia, condicao_metereologica, qtd_veiculos_envolvidos)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                        acidente.getId(), acidente.getData(), acidente.getDia_semana(), acidente.getHorario(), acidente.getUf(), acidente.getMunicipio(),
                                         acidente.getCausa(), acidente.getFase_dia(), acidente.getCondicao_metereologica(), acidente.getQuantidade_veiculos());
                                     System.out.println("\u001B[32m" + coletarDataHoraAtual());
                                     System.out.println("Inserção dos dados na tabela acidente_transito feita com sucesso!" + "\u001B[0m");
                                     registrarLog("Inserção dos dados na tabela acidente_transito feita com sucesso!");
+
+                                    inserirLog(connection, "SUCESSO", "Insert bem sucedido", "Inserção dos dados na tabela acidente_transito feita com sucesso.");
+                                    System.out.println("\u001B[32m" + coletarDataHoraAtual());
                                 } catch (S3Exception e) {
-                                    System.out.println("\u001B[31mErro ao inserir na tabela acidente_transito: " + e.getMessage() + "\u001B[0m");
+                                    System.out.println("\u001B[31m" + coletarDataHoraAtual());
+                                    System.out.println("Erro ao inserir na tabela acidente_transito: " + e.getMessage() + "\u001B[0m");
                                     registrarErro("Erro ao inserir na tabela acidente_transito: " + e.getMessage());
+
+                                    inserirLog(connection, "ERRO", "Erro ao inserir na tabela acidente_transito", e.getMessage());
+
                                 }
                                 contadorLinhas++;
                             }

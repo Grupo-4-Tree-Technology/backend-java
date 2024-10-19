@@ -1,5 +1,7 @@
 package br.com.technology.tree;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -55,6 +57,22 @@ public class Log {
             writer.newLine();
         } catch (IOException e) {
             System.err.println("Erro ao registrar log: " + e.getMessage());
+        }
+    }
+
+    public static void inserirLog(JdbcTemplate connection, String status, String titulo, String descricao) {
+        try {
+            connection.update("""
+            INSERT INTO log (status, titulo, descricao)
+            VALUES (?, ?, ?)""", status, titulo, descricao);
+            System.out.println();
+            System.out.println("Log inserido com sucesso!" + "\u001B[0m");
+            System.out.println("===========================");
+        } catch (Exception e) {
+            System.out.println();
+            System.out.println("Erro ao inserir log: " + e.getMessage() + "\u001B[0m");
+            System.out.println("===========================");
+            System.out.println();
         }
     }
 

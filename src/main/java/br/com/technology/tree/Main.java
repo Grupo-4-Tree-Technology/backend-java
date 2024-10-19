@@ -20,12 +20,15 @@ public class Main {
         S3Client s3Client = new S3Provider().getS3Client();
         String bucketName = "s3-tree-technology-bucket";
 
+        DBConnectionProvider dbConnectionProvider = new DBConnectionProvider();
+        JdbcTemplate connection = dbConnectionProvider.getConnection();
+
         // *************************************
         // *   Listando todos os buckets      *
         // *************************************
         // DESCOMENTE A LINHA ABAIXO CASO QUEIRA LISTAR TODOS OS BUCKETS:
 
-        S3Bucket.listAllBuckets(s3Client);
+        S3Bucket.listAllBuckets(connection, s3Client);
         System.out.println();
 
         // *************************************
@@ -33,18 +36,15 @@ public class Main {
         // *************************************
         // DESCOMENTE A LINHA ABAIXO CASO QUEIRA LISTAR OBJETOS DE UM BUCKET:
         System.out.println(coletarDataHoraAtual());
-        S3Bucket.listBucketObjects(s3Client, bucketName);
+        S3Bucket.listBucketObjects(connection, s3Client, bucketName);
         System.out.println();
 
         // *************************************
         // *   Fazendo download de arquivos    *
         // *************************************
         System.out.println(coletarDataHoraAtual());
-        S3Bucket.downloadFiles(s3Client, bucketName);
+        S3Bucket.downloadFiles(connection, s3Client, bucketName);
         System.out.println();
-
-        DBConnectionProvider dbConnectionProvider = new DBConnectionProvider();
-        JdbcTemplate connection = dbConnectionProvider.getConnection();
 
         BancoDeDados.createTables(connection);
 

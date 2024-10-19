@@ -1,5 +1,6 @@
 package br.com.technology.tree.bucket;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.*;
@@ -13,12 +14,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static br.com.technology.tree.Log.registrarErro;
-import static br.com.technology.tree.Log.registrarLog;
+import static br.com.technology.tree.Log.*;
 
 public class S3Bucket {
 
-    public static void createNewBucket(S3Client s3Client, String bucketName) {
+    public static void createNewBucket(JdbcTemplate connection, S3Client s3Client, String bucketName) {
         try {
             CreateBucketRequest createBucketRequest = CreateBucketRequest.builder()
                     .bucket(bucketName)
@@ -26,13 +26,17 @@ public class S3Bucket {
             s3Client.createBucket(createBucketRequest);
             System.out.println("Bucket criado com sucesso: " + bucketName);
             registrarLog("Bucket criado com sucesso: " + bucketName);
+
+            inserirLog(connection, "SUCESSO", "Bucket criado", "Bucket criado com sucesso");
         } catch (S3Exception e) {
             System.err.println("Erro ao criar o bucket: " + e.getMessage());
             registrarErro("Erro ao criar o bucket: " + e.getMessage());
+
+            inserirLog(connection, "ERRO", "Falha ao criar o bucket", e.getMessage());
         }
     }
 
-    public static void listAllBuckets(S3Client s3Client) {
+    public static void listAllBuckets(JdbcTemplate connection, S3Client s3Client) {
         try {
             List<Bucket> buckets = s3Client.listBuckets().buckets();
             System.out.println("Lista de buckets:");
@@ -40,14 +44,17 @@ public class S3Bucket {
                 System.out.println("- " + bucket.name());
             }
             registrarLog("Listagem de todos os buckets com sucesso.");
-        } catch (S3Exception e) {
 
+            inserirLog(connection, "SUCESSO", "Listagem dos buckets", "Listagem de todos os buckets com sucesso.");
+        } catch (S3Exception e) {
             System.err.println("Erro ao listar buckets: " + e.getMessage());
             registrarErro("Erro ao listar todos os buckets: " + e.getMessage());
+
+            inserirLog(connection, "ERRO", "Falha ao listar todos os buckets", e.getMessage());
         }
     }
 
-    public static void listBucketObjects(S3Client s3Client, String bucketName) {
+    public static void listBucketObjects(JdbcTemplate connection, S3Client s3Client, String bucketName) {
         try {
             ListObjectsRequest listObjects = ListObjectsRequest.builder()
                     .bucket(bucketName)
@@ -59,13 +66,17 @@ public class S3Bucket {
                 System.out.println("- " + object.key());
             }
             registrarLog("Listagem de todos os objetos do bucket " + bucketName + " com sucesso.");
+
+            inserirLog(connection, "SUCESSO", "Listagem bem sucedida", "Listagem de todos os objetos do bucket " + bucketName + " com sucesso.");
         } catch (S3Exception e) {
             System.err.println("Erro ao listar objetos no bucket " + bucketName + ": " + e.getMessage());
             registrarErro("Erro ao listar objetos no bucket " + bucketName + ": " + e.getMessage());
+
+            inserirLog(connection, "ERRO", "Falha ao listar objetos no bucket" + bucketName, e.getMessage());
         }
     }
 
-    public static void uploadFiles(S3Client s3Client, String bucketName) {
+    public static void uploadFiles(JdbcTemplate connection, S3Client s3Client, String bucketName) {
         try {
             String uniqueFileName = UUID.randomUUID().toString();
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -78,13 +89,17 @@ public class S3Bucket {
 
             System.out.println("Arquivo '" + file.getName() + "' enviado com sucesso com o nome: " + uniqueFileName);
             registrarLog("Arquivo '" + file.getName() + "' enviado com sucesso com o nome: " + uniqueFileName);
+
+            inserirLog(connection, "SUCESSO", "Envio de arquivo", "Arquivo '" + file.getName() + "' enviado com sucesso com o nome: " + uniqueFileName);
         } catch (S3Exception e) {
             System.err.println("Erro ao fazer upload do arquivo: " + e.getMessage());
             registrarErro("Erro ao fazer upload do arquivo: " + e.getMessage());
+
+            inserirLog(connection, "ERRO", "Falha ao fazer upload", e.getMessage());
         }
     }
 
-    public static void downloadFiles(S3Client s3Client, String bucketName) {
+    public static void downloadFiles(JdbcTemplate connection, S3Client s3Client, String bucketName) {
         try {
             String downloadDirectory = System.getProperty("user.dir") + File.separator + "filesBucketS3" + File.separator;
             new File(downloadDirectory).mkdirs();
@@ -102,15 +117,19 @@ public class S3Bucket {
                 Files.copy(inputStream, downloadFile.toPath());
                 System.out.println("Arquivo baixado: " + object.key());
                 registrarLog("Arquivo baixado com sucesso: " + object.key());
+
+                inserirLog(connection, "SUCESSO", "Download de arquivos", "Arquivo baixado com sucesso: " + object.key());
             }
         } catch (IOException | S3Exception e) {
             String mensagem = "Erro ao fazer download do(s) arquivo(s): " + e.getMessage();
             System.err.println(mensagem);
             registrarErro(mensagem);
+
+            inserirLog(connection, "ERRO", "Falha ao fazer download de arquivos", e.getMessage());
         }
     }
 
-    public static void deleteBucketObject(S3Client s3Client, String bucketName) {
+    public static void deleteBucketObject(JdbcTemplate connection, S3Client s3Client, String bucketName) {
         try {
             String objectKeyToDelete = "identificador-do-arquivo";
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
@@ -121,9 +140,13 @@ public class S3Bucket {
 
             System.out.println("Objeto deletado com sucesso: " + objectKeyToDelete);
             registrarLog("Objeto deletado com sucesso: " + objectKeyToDelete);
+
+            inserirLog(connection, "SUCESSO", "Objeto deletado", "Objeto deletado com sucesso: " + objectKeyToDelete);
         } catch (S3Exception e) {
             System.err.println("Erro ao deletar objeto: " + e.getMessage());
             registrarErro("Erro ao deletar objeto: " + e.getMessage());
+
+            inserirLog(connection, "ERRO", "Falha ao deletar objeto", e.getMessage());
         }
     }
 }

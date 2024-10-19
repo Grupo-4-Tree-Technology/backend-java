@@ -3,6 +3,7 @@ package br.com.technology.tree.leituraPlanilha;
 public class Acidente {
     private Integer id;
     private String data;
+    private String dia_semana;
     private String horario;
     private String uf;
     private String municipio;
@@ -15,9 +16,10 @@ public class Acidente {
 
     }
 
-    public Acidente(Integer id, String data, String horario, String uf, String municipio, String causa, String fase_dia, String condicao_metereologica, Integer quantidade_veiculos) {
+    public Acidente(Integer id, String data, String dia_semana, String horario, String uf, String municipio, String causa, String fase_dia, String condicao_metereologica, Integer quantidade_veiculos) {
         this.id = id;
         this.data = data;
+        this.dia_semana = dia_semana;
         this.horario = horario;
         this.uf = uf;
         this.municipio = municipio;
@@ -41,6 +43,14 @@ public class Acidente {
 
     public void setData(String data) {
         this.data = data;
+    }
+
+    public String getDia_semana() {
+        return dia_semana;
+    }
+
+    public void setDia_semana(String dia_semana) {
+        this.dia_semana = dia_semana;
     }
 
     public String getHorario() {
@@ -104,6 +114,7 @@ public class Acidente {
         return "Acidente{" +
                 "id=" + id +
                 ", data='" + data + '\'' +
+                ", dia_semana='" + dia_semana + '\'' +
                 ", horario='" + horario + '\'' +
                 ", uf='" + uf + '\'' +
                 ", municipio='" + municipio + '\'' +
@@ -111,6 +122,6 @@ public class Acidente {
                 ", fase_dia='" + fase_dia + '\'' +
                 ", condicao_metereologica='" + condicao_metereologica + '\'' +
                 ", quantidade_veiculos=" + quantidade_veiculos +
-                "}";
+                '}';
     }
 }
