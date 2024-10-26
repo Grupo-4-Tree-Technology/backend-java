@@ -15,8 +15,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         // Instanciando o cliente S3 via S3Provider
         S3Client s3Client = new S3Provider().getS3Client();
-//        String bucketName = "s3-tree-technology-bucket";
-        String bucketName = "s3-tree-technology-teste";
+        String bucketName = "s3-tree-technology-bucket";
 
         DBConnectionProvider dbConnectionProvider = new DBConnectionProvider();
         JdbcTemplate connection = dbConnectionProvider.getConnection();
@@ -36,18 +35,11 @@ public class Main {
         System.out.println(coletarDataHoraAtual());
         S3Bucket.listBucketObjects(connection, s3Client, bucketName);
         System.out.println();
-
-        // *************************************
-        // *   Fazendo download de arquivos    *
-        // *************************************
-        System.out.println(coletarDataHoraAtual());
-
         System.out.println();
 
         // BancoDeDados.createTables(connection);
 
         processarAcidentes(connection, s3Client);
-
         enviarArquivosParaS3(s3Client, bucketName);
     }
 }
