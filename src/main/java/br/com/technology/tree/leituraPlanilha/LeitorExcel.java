@@ -119,10 +119,10 @@ public class LeitorExcel {
                                         acidente.getCausa(), acidente.getFase_dia(), acidente.getCondicao_metereologica(), acidente.getQuantidade_veiculos());
                                     System.out.println("\u001B[32m" + coletarDataHoraAtual());
                                     System.out.println(acidente);
-                                    System.out.println("Inserção dos dados na tabela acidente_transito feita com sucesso!" + "\u001B[0m");
-                                    registrarLog("Inserção dos dados na tabela acidente_transito feita com sucesso!");
+                                    System.out.println("Insercao dos dados na tabela acidente_transito feita com sucesso!" + "\u001B[0m");
+                                    registrarLog("Insercao dos dados na tabela acidente_transito feita com sucesso!");
 
-                                    inserirLog(connection, "SUCESSO", nomeArquivo, "Insert bem sucedido", "Inserção dos dados na tabela acidente_transito feita com sucesso.");
+                                    inserirLog(connection, "SUCESSO", nomeArquivo, "Insert bem sucedido", "Insercao dos dados na tabela acidente_transito feita com sucesso.");
                                     System.out.println("\u001B[32m" + coletarDataHoraAtual());
                                 } catch (S3Exception e) {
                                     System.out.println("\u001B[31m" + coletarDataHoraAtual());
