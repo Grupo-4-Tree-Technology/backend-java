@@ -1,57 +1,67 @@
 package br.com.technology.tree.leituraPlanilha;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import br.com.technology.tree.leituraPlanilha.Acidente;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import static br.com.technology.tree.Log.*;
+import static br.com.technology.tree.bucket.S3Bucket.getFirstObjectInSpecificBucket;
 
 public class LeitorExcel {
 
-    public List<Acidente> extrairAcidentes(String nomeArquivo, InputStream arquivo, JdbcTemplate connection) {
+    public List<Acidente> extrairAcidentes(String nomeArquivo, InputStream arquivoS3Stream, JdbcTemplate connection) {
         try {
             System.out.println("\nIniciando leitura do arquivo %s".formatted(nomeArquivo));
 
-            // Criando um objeto Workbook a partir do arquivo recebido
+            String consulta = "SELECT COUNT(*) FROM log WHERE arquivo_lido = ?";
+            Integer arquivoJaProcessado = connection.queryForObject(consulta, Integer.class, nomeArquivo);
+
+            if (arquivoJaProcessado != null && arquivoJaProcessado > 0) {
+                String registroArquivoProcessado = String.format("Arquivo '%s' já foi processado anteriormente. Processo interrompido.%n", nomeArquivo);
+                System.out.printf(registroArquivoProcessado);
+
+                registrarErro(registroArquivoProcessado);
+                try {
+                    connection.update("""
+                    INSERT INTO log (status, arquivo_lido, titulo, descricao)
+                    VALUES (?, ?, ?, ?)""", "ERRO", nomeArquivo, "Arquivo já processado", registroArquivoProcessado);
+                    System.out.println();
+                    System.out.println("Log inserido com sucesso!" + "\u001B[0m");
+                    System.out.println("===========================");
+                } catch (Exception e) {
+                    System.out.println();
+                    System.out.println("Erro ao inserir log: " + e.getMessage() + "\u001B[0m");
+                    System.out.println("===========================");
+
+                }
+                return new ArrayList<>();
+            }
+
             Workbook workbook;
             if (nomeArquivo.endsWith(".xlsx")) {
-                workbook = new XSSFWorkbook(arquivo);
+                workbook = new XSSFWorkbook(arquivoS3Stream);
             } else {
-                workbook = new HSSFWorkbook(arquivo);
+                workbook = new HSSFWorkbook(arquivoS3Stream);
             }
 
             Sheet sheet = workbook.getSheetAt(0);
 
             List<Acidente> acidentesExtraidos = new ArrayList<>();
 
-            // Iterando sobre as linhas da planilha
-
             Integer contadorLinhas = 0;
             Integer linhaInicial = 0;
-
-            List<Acidente> acidentesDoBanco = connection.query("SELECT id FROM acidente_transito", new BeanPropertyRowMapper<>(Acidente.class));
-
-            if (!acidentesDoBanco.isEmpty()) {
-                linhaInicial = acidentesDoBanco.getLast().getId();
-            }
 
             int[] indicesColuna = new int[]{0, 1, 2, 3, 4, 7, 8, 11, 13, 24};
 
@@ -68,13 +78,8 @@ public class LeitorExcel {
 
                     System.out.println("--------------------");
 
-                } else if (contadorLinhas < 10) {
-                    String colunaID = String.valueOf((int) row.getCell(0).getNumericCellValue());
+                } else {
 
-                    if (Integer.parseInt(colunaID) <= linhaInicial) {
-                        continue;
-                    }
-                    // Extraindo valor das células e criando objeto Acidente
                     System.out.println("Lendo linha " + row.getRowNum() + 1);
 
                     Acidente acidente = new Acidente();
@@ -113,34 +118,33 @@ public class LeitorExcel {
                                         acidente.getId(), acidente.getData(), acidente.getDia_semana(), acidente.getHorario(), acidente.getUf(), acidente.getMunicipio(),
                                         acidente.getCausa(), acidente.getFase_dia(), acidente.getCondicao_metereologica(), acidente.getQuantidade_veiculos());
                                     System.out.println("\u001B[32m" + coletarDataHoraAtual());
+                                    System.out.println(acidente);
                                     System.out.println("Inserção dos dados na tabela acidente_transito feita com sucesso!" + "\u001B[0m");
                                     registrarLog("Inserção dos dados na tabela acidente_transito feita com sucesso!");
 
-                                    inserirLog(connection, "SUCESSO", "Insert bem sucedido", "Inserção dos dados na tabela acidente_transito feita com sucesso.");
+                                    inserirLog(connection, "SUCESSO", nomeArquivo, "Insert bem sucedido", "Inserção dos dados na tabela acidente_transito feita com sucesso.");
                                     System.out.println("\u001B[32m" + coletarDataHoraAtual());
                                 } catch (S3Exception e) {
                                     System.out.println("\u001B[31m" + coletarDataHoraAtual());
                                     System.out.println("Erro ao inserir na tabela acidente_transito: " + e.getMessage() + "\u001B[0m");
                                     registrarErro("Erro ao inserir na tabela acidente_transito: " + e.getMessage());
 
-                                    inserirLog(connection, "ERRO", "Erro ao inserir na tabela acidente_transito", e.getMessage());
+                                    inserirLog(connection, "ERRO", nomeArquivo, "Erro ao inserir na tabela acidente_transito", e.getMessage());
 
                                 }
                                 contadorLinhas++;
                             }
                         }
                     }
-                } else {
-                    break;
                 }
             }
-            linhaInicial = acidentesExtraidos.getLast().getId();
             System.out.println("""
 
                     \u001B[32m[INFO] Leitura do arquivo finalizada com sucesso!
                     \u001B[0m""");
 
-            // Fechando o workbook após a leitura
+            registrarArquivosLidos( "O arquivo " + nomeArquivo + " foi lido com sucesso.");
+
             workbook.close();
 
             return acidentesExtraidos;
@@ -149,37 +153,30 @@ public class LeitorExcel {
         }
     }
 
-    // IOException serve para gerar exceções de entrada e saída
-    public static void processarAcidentes(JdbcTemplate connection) throws IOException {
+    public static void processarAcidentes(JdbcTemplate connection, S3Client s3Client) throws IOException {
 
-        String nomeArquivo = "acidentes - datatran2024.xlsx";
-        String downloadDirectory = System.getProperty("user.dir") + File.separator + "filesBucketS3" + File.separator + nomeArquivo;
+        String bucketName = "s3-tree-technology-teste";
 
-        Path caminho = Path.of(downloadDirectory);
-        try (InputStream arquivo = Files.newInputStream(caminho)) {
+        String nomeArquivo = getFirstObjectInSpecificBucket(bucketName, s3Client);
 
-            LeitorExcel leitorExcel = new LeitorExcel();
-            List<Acidente> acidentesExtraidos = leitorExcel.extrairAcidentes(nomeArquivo, arquivo, connection);
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(nomeArquivo)
+                    .build();
 
-            int contadorLinhas = 0;
+            try (ResponseInputStream<?> arquivoS3Stream = s3Client.getObject(getObjectRequest)) {
+                LeitorExcel leitorExcel = new LeitorExcel();
+                List<Acidente> acidentesExtraidos = leitorExcel.extrairAcidentes(nomeArquivo, arquivoS3Stream, connection);
 
-            System.out.println("Acidentes extraídos:");
-            for (Acidente acidente : acidentesExtraidos) {
-                System.out.println(acidente);
-                contadorLinhas++;
+                System.out.println("Acidentes extraídos: " + acidentesExtraidos.size());
             }
-
-            System.out.println("Acidentes em SP coletados: " + contadorLinhas);
         } catch (IOException e) {
-            System.out.println("\u001B[31m" + "[ERROR] " + "Erro ao processar o arquivo: " + e.getMessage() + "\u001B[33m");
+            System.out.println("\u001B[31m" + "[ERROR] " + "Erro ao processar o arquivo no S3: " + e.getMessage() + "\u001B[33m");
             System.out.println("""
-                    1. Tente verificar o nome do arquivo.
-                    2. Tente verificar o diretório de download (downloadDirectory).
+                    1. Verifique o nome do arquivo.
+                    2. Verifique se o arquivo está disponível no bucket.
                     """+ "\u001B[0m");
         }
-    }
-
-    private LocalDate converterDate(Date data) {
-        return data.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }

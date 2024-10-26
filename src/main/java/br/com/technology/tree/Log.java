@@ -1,21 +1,23 @@
 package br.com.technology.tree;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Calendar;
-import java.util.Date;
 
 public class Log {
 
     private static final String LOG_DIRECTORY = "logs/";
 
-    private static void createLogDirectory() {
+    private static void criarDiretorioLog() {
         File directory = new File(LOG_DIRECTORY);
         if (!directory.exists()) {
             directory.mkdir();
@@ -33,7 +35,7 @@ public class Log {
     }
 
     public static void registrarLog(String mensagem) {
-        createLogDirectory();
+        criarDiretorioLog();
         String dataHoraAtual = coletarDataHoraAtual();
         String logMessage = dataHoraAtual + " [SUCESSO] " + mensagem;
         String logFilePath = obterCaminhoDoArquivoDiario();
@@ -47,7 +49,7 @@ public class Log {
     }
 
     public static void registrarErro(String mensagem) {
-        createLogDirectory();
+        criarDiretorioLog();
         String dataHora = coletarDataHoraAtual();
         String logMessage = dataHora + " [ERRO] " + mensagem;
         String logFilePath = obterCaminhoDoArquivoDiario();
@@ -57,6 +59,35 @@ public class Log {
             writer.newLine();
         } catch (IOException e) {
             System.err.println("Erro ao registrar log: " + e.getMessage());
+        }
+    }
+
+    public static void registrarArquivosLidos(String mensagem) {
+        criarDiretorioLog();
+        String logMessage = coletarDataHoraAtual() + " " + mensagem;
+        String logFilePath = LOG_DIRECTORY + "arquivos_lidos.log";
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFilePath, true))) {
+            writer.write(logMessage);
+            writer.newLine();
+        } catch (IOException e) {
+            System.err.println("Erro ao registrar log: " + e.getMessage());
+        }
+    }
+
+    public static void inserirLog(JdbcTemplate connection, String status, String nomeArquivo, String titulo, String descricao) {
+        try {
+            connection.update("""
+            INSERT INTO log (status, arquivo_lido, titulo, descricao)
+            VALUES (?, ?, ?, ?)""", status, nomeArquivo, titulo, descricao);
+            System.out.println();
+            System.out.println("Log inserido com sucesso!" + "\u001B[0m");
+            System.out.println("===========================");
+        } catch (Exception e) {
+            System.out.println();
+            System.out.println("Erro ao inserir log: " + e.getMessage() + "\u001B[0m");
+            System.out.println("===========================");
+            System.out.println();
         }
     }
 
@@ -73,6 +104,33 @@ public class Log {
             System.out.println("Erro ao inserir log: " + e.getMessage() + "\u001B[0m");
             System.out.println("===========================");
             System.out.println();
+        }
+    }
+
+    public static void enviarArquivosParaS3(S3Client s3Client, String bucketName) {
+        File logDirectory = new File(LOG_DIRECTORY);
+        File[] logFiles = logDirectory.listFiles();
+
+        if (logFiles != null && logFiles.length > 0) {
+            for (File logFile : logFiles) {
+                if (logFile.isFile()) {
+                    try {
+
+                        Path path = logFile.toPath();
+                        PutObjectRequest putRequest = PutObjectRequest.builder()
+                                .bucket(bucketName)
+                                .key(LOG_DIRECTORY + logFile.getName())
+                                .build();
+
+                        s3Client.putObject(putRequest, path);
+                        System.out.println("Arquivo enviado para S3: " + logFile.getName());
+                    } catch (Exception e) {
+                        System.err.println("Erro ao enviar arquivo " + logFile.getName() + ": " + e.getMessage());
+                    }
+                }
+            }
+        } else {
+            System.out.println("Nenhum arquivo encontrado na pasta de logs.");
         }
     }
 

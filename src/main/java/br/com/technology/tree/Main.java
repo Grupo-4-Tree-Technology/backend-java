@@ -1,24 +1,22 @@
 
 package br.com.technology.tree;
 
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
-import java.util.List;
 
 import static br.com.technology.tree.Log.*;
 import br.com.technology.tree.banco.*;
 import br.com.technology.tree.bucket.*;
-import br.com.technology.tree.leituraPlanilha.Acidente;
 import static br.com.technology.tree.leituraPlanilha.LeitorExcel.processarAcidentes;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         // Instanciando o cliente S3 via S3Provider
         S3Client s3Client = new S3Provider().getS3Client();
-        String bucketName = "s3-tree-technology-bucket";
+//        String bucketName = "s3-tree-technology-bucket";
+        String bucketName = "s3-tree-technology-teste";
 
         DBConnectionProvider dbConnectionProvider = new DBConnectionProvider();
         JdbcTemplate connection = dbConnectionProvider.getConnection();
@@ -43,11 +41,13 @@ public class Main {
         // *   Fazendo download de arquivos    *
         // *************************************
         System.out.println(coletarDataHoraAtual());
-        S3Bucket.downloadFiles(connection, s3Client, bucketName);
+
         System.out.println();
 
-        BancoDeDados.createTables(connection);
+        // BancoDeDados.createTables(connection);
 
-        processarAcidentes(connection);
+        processarAcidentes(connection, s3Client);
+
+        enviarArquivosParaS3(s3Client, bucketName);
     }
 }
