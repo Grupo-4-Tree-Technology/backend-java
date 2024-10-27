@@ -15,7 +15,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         // Instanciando o cliente S3 via S3Provider
         S3Client s3Client = new S3Provider().getS3Client();
-        String bucketName = "s3bucket-tree-technology";
+        String bucketName = "s3-bucket-tree-technology-teste";
 
         DBConnectionProvider dbConnectionProvider = new DBConnectionProvider();
         JdbcTemplate connection = dbConnectionProvider.getConnection();
