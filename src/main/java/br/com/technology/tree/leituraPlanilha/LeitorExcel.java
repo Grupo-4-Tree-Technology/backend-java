@@ -5,6 +5,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.technology.tree.Log;
+import br.com.technology.tree.banco.DBConnectionProvider;
+import br.com.technology.tree.bucket.S3Bucket;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -17,11 +20,24 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import static br.com.technology.tree.Log.*;
-import static br.com.technology.tree.bucket.S3Bucket.getFirstObjectInSpecificBucket;
 
 public class LeitorExcel {
 
-    public List<Acidente> extrairAcidentes(String nomeArquivo, InputStream arquivoS3Stream, JdbcTemplate connection) {
+    private final List<Acidente> acidentes;
+    private final S3Bucket s3Bucket;
+    private final DBConnectionProvider dbConnectionProvider;
+    private final Log log;
+
+    public LeitorExcel(S3Bucket s3Bucket, DBConnectionProvider dbConnectionProvider) {
+        this.acidentes = new ArrayList<>();
+        this.s3Bucket = s3Bucket;
+        this.dbConnectionProvider = dbConnectionProvider;
+        this.log = new Log();
+    }
+
+    public List<Acidente> extrairAcidentes(String nomeArquivo, InputStream arquivoS3Stream) {
+        JdbcTemplate connection = dbConnectionProvider.getJdbcTemplate();
+
         try {
             System.out.println("\nIniciando leitura do arquivo %s".formatted(nomeArquivo));
 
@@ -32,11 +48,11 @@ public class LeitorExcel {
                 String registroArquivoProcessado = String.format("Arquivo '%s' já foi processado anteriormente. Processo interrompido.%n", nomeArquivo);
                 System.out.printf(registroArquivoProcessado);
 
-                registrarErro(registroArquivoProcessado);
+                this.log.registrarErro(registroArquivoProcessado);
                 try {
                     connection.update("""
                     INSERT INTO log (status, arquivo_lido, titulo, descricao)
-                    VALUES (?, ?, ?, ?)""", "ERRO", nomeArquivo, "Arquivo já processado", registroArquivoProcessado);
+                    VALUES (?, ?, ?, ?)""", "ERRO", nomeArquivo, "Arquivo ja processado", registroArquivoProcessado);
                     System.out.println();
                     System.out.println("Log inserido com sucesso!" + "\u001B[0m");
                     System.out.println("===========================");
@@ -57,8 +73,6 @@ public class LeitorExcel {
             }
 
             Sheet sheet = workbook.getSheetAt(0);
-
-            List<Acidente> acidentesExtraidos = new ArrayList<>();
 
             Integer contadorLinhas = 0;
             Integer linhaInicial = 0;
@@ -81,9 +95,6 @@ public class LeitorExcel {
                 } else {
 
                     System.out.println("Lendo linha " + row.getRowNum() + 1);
-
-                    Acidente acidente = new Acidente();
-
                     if (row.getCell(4).getStringCellValue().equals("SP")) {
 
                         String faseDia = row.getCell(11).getStringCellValue();
@@ -94,6 +105,8 @@ public class LeitorExcel {
                             if (condicaoMetereologica.equals("Céu Claro") || condicaoMetereologica.equals("Chuva") ||
                                 condicaoMetereologica.equals("Sol") || condicaoMetereologica.equals("Nublado") ||
                                 condicaoMetereologica.equals("Garoa/Chuvisco")) {
+
+                                Acidente acidente = new Acidente();
 
                                 String condicaoFormatada = condicaoMetereologica.equals("Céu Claro") ? condicaoMetereologica.replace('é', 'e') : condicaoMetereologica;
 
@@ -108,7 +121,7 @@ public class LeitorExcel {
                                 acidente.setCondicao_metereologica(condicaoFormatada);
                                 acidente.setQuantidade_veiculos((int) row.getCell(24).getNumericCellValue());
 
-                                acidentesExtraidos.add(acidente);
+                                acidentes.add(acidente);
 
                                 try {
                                     connection.update("""
@@ -117,19 +130,19 @@ public class LeitorExcel {
                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                                         acidente.getId(), acidente.getData(), acidente.getDia_semana(), acidente.getHorario(), acidente.getUf(), acidente.getMunicipio(),
                                         acidente.getCausa(), acidente.getFase_dia(), acidente.getCondicao_metereologica(), acidente.getQuantidade_veiculos());
-                                    System.out.println("\u001B[32m" + coletarDataHoraAtual());
+                                    System.out.println("\u001B[32m" + this.log.coletarDataHoraAtual());
                                     System.out.println(acidente);
                                     System.out.println("Insercao dos dados na tabela acidente_transito feita com sucesso!" + "\u001B[0m");
-                                    registrarLog("Insercao dos dados na tabela acidente_transito feita com sucesso!");
+                                    this.log.registrarLog("Insercao dos dados na tabela acidente_transito feita com sucesso!");
 
-                                    inserirLog(connection, "SUCESSO", nomeArquivo, "Insert bem sucedido", "Insercao dos dados na tabela acidente_transito feita com sucesso.");
-                                    System.out.println("\u001B[32m" + coletarDataHoraAtual());
+                                    this.log.inserirLog(connection, "SUCESSO", nomeArquivo, "Insert bem sucedido", "Insercao dos dados na tabela acidente_transito feita com sucesso.");
+                                    System.out.println("\u001B[32m" + this.log.coletarDataHoraAtual());
                                 } catch (S3Exception e) {
-                                    System.out.println("\u001B[31m" + coletarDataHoraAtual());
+                                    System.out.println("\u001B[31m" + this.log.coletarDataHoraAtual());
                                     System.out.println("Erro ao inserir na tabela acidente_transito: " + e.getMessage() + "\u001B[0m");
-                                    registrarErro("Erro ao inserir na tabela acidente_transito: " + e.getMessage());
+                                    this.log.registrarErro("Erro ao inserir na tabela acidente_transito: " + e.getMessage());
 
-                                    inserirLog(connection, "ERRO", nomeArquivo, "Erro ao inserir na tabela acidente_transito", e.getMessage());
+                                    this.log.inserirLog(connection, "ERRO", nomeArquivo, "Erro ao inserir na tabela acidente_transito", e.getMessage());
 
                                 }
                                 contadorLinhas++;
@@ -143,21 +156,19 @@ public class LeitorExcel {
                     \u001B[32m[INFO] Leitura do arquivo finalizada com sucesso!
                     \u001B[0m""");
 
-            registrarArquivosLidos( "O arquivo " + nomeArquivo + " foi lido com sucesso.");
+            this.log.registrarArquivosLidos( "O arquivo " + nomeArquivo + " foi lido com sucesso.");
 
             workbook.close();
 
-            return acidentesExtraidos;
+            return acidentes;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void processarAcidentes(JdbcTemplate connection, S3Client s3Client) throws IOException {
+    public void processarAcidentes(S3Client s3Client, String bucketName) throws IOException {
 
-        String bucketName = "s3-tree-technology-teste";
-
-        String nomeArquivo = getFirstObjectInSpecificBucket(bucketName, s3Client);
+        String nomeArquivo = s3Bucket.getFirstObjectInSpecificBucket(s3Client, bucketName);
 
         try {
             GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -166,10 +177,11 @@ public class LeitorExcel {
                     .build();
 
             try (ResponseInputStream<?> arquivoS3Stream = s3Client.getObject(getObjectRequest)) {
-                LeitorExcel leitorExcel = new LeitorExcel();
-                List<Acidente> acidentesExtraidos = leitorExcel.extrairAcidentes(nomeArquivo, arquivoS3Stream, connection);
+
+                List<Acidente> acidentesExtraidos = extrairAcidentes(nomeArquivo, arquivoS3Stream);
 
                 System.out.println("Acidentes extraídos: " + acidentesExtraidos.size());
+                this.log.registrarLog("Total de linhas inseridas: " + acidentesExtraidos.size());
             }
         } catch (IOException e) {
             System.out.println("\u001B[31m" + "[ERROR] " + "Erro ao processar o arquivo no S3: " + e.getMessage() + "\u001B[33m");
@@ -178,5 +190,21 @@ public class LeitorExcel {
                     2. Verifique se o arquivo está disponível no bucket.
                     """+ "\u001B[0m");
         }
+    }
+
+    public List<Acidente> getAcidentes() {
+        return acidentes;
+    }
+
+    public S3Bucket getS3Bucket() {
+        return s3Bucket;
+    }
+
+    public DBConnectionProvider getDbConnectionProvider() {
+        return dbConnectionProvider;
+    }
+
+    public Log getLog() {
+        return log;
     }
 }

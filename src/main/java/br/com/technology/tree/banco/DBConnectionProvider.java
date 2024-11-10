@@ -1,13 +1,15 @@
 package br.com.technology.tree.banco;
 
+import br.com.technology.tree.ConexaoBase;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 
-public class DBConnectionProvider {
+public class DBConnectionProvider extends ConexaoBase {
 
     private final DataSource dataSource;
+    private JdbcTemplate jdbcTemplate;
 
     public DBConnectionProvider() {
         BasicDataSource basicDataSource = new BasicDataSource();
@@ -18,7 +20,13 @@ public class DBConnectionProvider {
         this.dataSource = basicDataSource;
     }
 
-    public JdbcTemplate getConnection() {
-        return new JdbcTemplate(dataSource);
+    @Override
+    public void conectar() {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @Override
+    public JdbcTemplate getJdbcTemplate() {
+        return jdbcTemplate;
     }
 }

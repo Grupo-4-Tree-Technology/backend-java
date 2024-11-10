@@ -17,14 +17,14 @@ public class Log {
 
     private static final String LOG_DIRECTORY = "logs/";
 
-    private static void criarDiretorioLog() {
+    private void criarDiretorioLog() {
         File directory = new File(LOG_DIRECTORY);
         if (!directory.exists()) {
             directory.mkdir();
         }
     }
 
-    private static String obterCaminhoDoArquivoDiario() {
+    private String obterCaminhoDoArquivoDiario() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         Calendar cal = Calendar.getInstance();
 
@@ -34,7 +34,7 @@ public class Log {
         return LOG_DIRECTORY + "logs_" + simulatedDate + ".log";
     }
 
-    public static void registrarLog(String mensagem) {
+    public void registrarLog(String mensagem) {
         criarDiretorioLog();
         String dataHoraAtual = coletarDataHoraAtual();
         String logMessage = dataHoraAtual + " [SUCESSO] " + mensagem;
@@ -48,7 +48,7 @@ public class Log {
         }
     }
 
-    public static void registrarErro(String mensagem) {
+    public void registrarErro(String mensagem) {
         criarDiretorioLog();
         String dataHora = coletarDataHoraAtual();
         String logMessage = dataHora + " [ERRO] " + mensagem;
@@ -62,7 +62,7 @@ public class Log {
         }
     }
 
-    public static void registrarArquivosLidos(String mensagem) {
+    public void registrarArquivosLidos(String mensagem) {
         criarDiretorioLog();
         String logMessage = coletarDataHoraAtual() + " " + mensagem;
         String logFilePath = LOG_DIRECTORY + "arquivos_lidos.log";
@@ -75,7 +75,7 @@ public class Log {
         }
     }
 
-    public static void inserirLog(JdbcTemplate connection, String status, String nomeArquivo, String titulo, String descricao) {
+    public void inserirLog(JdbcTemplate connection, String status, String nomeArquivo, String titulo, String descricao) {
         try {
             connection.update("""
             INSERT INTO log (status, arquivo_lido, titulo, descricao)
@@ -91,7 +91,8 @@ public class Log {
         }
     }
 
-    public static void inserirLog(JdbcTemplate connection, String status, String titulo, String descricao) {
+    // Fiz uma sobrecarga do método inserirLog (Overload)
+    public void inserirLog(JdbcTemplate connection, String status, String titulo, String descricao) {
         try {
             connection.update("""
             INSERT INTO log (status, titulo, descricao)
@@ -107,7 +108,7 @@ public class Log {
         }
     }
 
-    public static void enviarArquivosParaS3(S3Client s3Client, String bucketName) {
+    public void enviarLogsParaS3(S3Client s3Client, String bucketName) {
         File logDirectory = new File(LOG_DIRECTORY);
         File[] logFiles = logDirectory.listFiles();
 
@@ -134,7 +135,7 @@ public class Log {
         }
     }
 
-    public static String coletarDataHoraAtual() {
+    public String coletarDataHoraAtual() {
         /*
          * Utilizei o LocalDateTime.now() para pegar a data + hora atual.
          * Utilizei o System.currentTimeMillis() para pegar os milissegundos atuais e concatenar com o horário.
