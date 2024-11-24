@@ -25,17 +25,17 @@ public class S3Provider extends ConexaoBase {
         }
     }
 
-    @Override
-    public S3Client getS3Client() {
-        return s3Client;
-    }
+//    @Override
+//    public S3Client getS3Client() {
+//        return s3Client;
+//    }
 
     // ========================================================================
     //        Descomentar abaixo e comentar o método "getS3Client" acima
     //        somente para teste local (inserir as variáveis de ambiente):
     // ========================================================================
 
-    /*
+
     private final AwsSessionCredentials credentials;
 
     public S3Provider() {
@@ -53,6 +53,6 @@ public class S3Provider extends ConexaoBase {
                 .credentialsProvider(() -> credentials)
                 .build();
     }
-     */
+
 
 }
