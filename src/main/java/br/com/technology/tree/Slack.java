@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class Slack {
 
     private static final HttpClient client = HttpClient.newHttpClient();
-    private static final String URL = "https://hooks.slack.com/services/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";
+    private static final String URL = System.getenv("SLACK_WEBHOOK_URL");
 
     // Conexão com o Slack
     public static void conexao(JSONObject content) throws IOException, InterruptedException {
