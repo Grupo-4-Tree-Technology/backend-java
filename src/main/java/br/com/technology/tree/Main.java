@@ -45,5 +45,8 @@ public class Main {
 
         leitorExcel.processarAcidentes(s3Client, bucketName);
         log.enviarLogsParaS3(s3Client, bucketName);
+
+        Slack slack = new Slack();
+        slack.executarNotificacoes(connection);
     }
 }

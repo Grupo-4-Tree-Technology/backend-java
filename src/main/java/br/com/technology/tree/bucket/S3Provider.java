@@ -35,8 +35,8 @@ public class S3Provider extends ConexaoBase {
     //        somente para teste local (inserir as variáveis de ambiente):
     // ========================================================================
 
-    /*
-    private final AwsSessionCredentials credentials;
+
+    /*private final AwsSessionCredentials credentials;
 
     public S3Provider() {
         this.credentials = AwsSessionCredentials.create(
@@ -52,7 +52,7 @@ public class S3Provider extends ConexaoBase {
                 .region(Region.US_EAST_1)
                 .credentialsProvider(() -> credentials)
                 .build();
-    }
-     */
+    }*/
+
 
 }
