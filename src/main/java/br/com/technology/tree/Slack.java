@@ -72,7 +72,7 @@ public class Slack {
 
             conexao(json);
         } catch (Exception e) {
-            System.out.println("Erro ao realizar Query" + e);
+            System.out.println("Erro ao realizar Query" + e.getMessage());
         }
     }
 
