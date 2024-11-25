@@ -25,7 +25,7 @@ public class Log {
     }
 
     private String obterCaminhoDoArquivoDiario() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Calendar cal = Calendar.getInstance();
 
         cal.add(Calendar.DAY_OF_MONTH, 0);

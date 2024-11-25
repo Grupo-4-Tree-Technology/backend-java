@@ -25,10 +25,10 @@ public class S3Provider extends ConexaoBase {
         }
     }
 
-//    @Override
-//    public S3Client getS3Client() {
-//        return s3Client;
-//    }
+    @Override
+    public S3Client getS3Client() {
+        return s3Client;
+    }
 
     // ========================================================================
     //        Descomentar abaixo e comentar o método "getS3Client" acima
@@ -36,7 +36,7 @@ public class S3Provider extends ConexaoBase {
     // ========================================================================
 
 
-    private final AwsSessionCredentials credentials;
+    /*private final AwsSessionCredentials credentials;
 
     public S3Provider() {
         this.credentials = AwsSessionCredentials.create(
@@ -52,7 +52,7 @@ public class S3Provider extends ConexaoBase {
                 .region(Region.US_EAST_1)
                 .credentialsProvider(() -> credentials)
                 .build();
-    }
+    }*/
 
 
 }
